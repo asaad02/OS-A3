@@ -65,11 +65,13 @@ void dinning(int num_Philosophers, int num_Times_Eats){
     Philosophers_NUM = num_Philosophers;
     eating = num_Times_Eats ;
 
+    long i = 0 ;
     // create and initialize the mutex lock
-    for (long i = 0; i < num_Philosophers; i++)
+    while(i < num_Philosophers)
     {
         //default mutex attributes are used as second attribute 
         pthread_mutex_init(&chopsticks[i],NULL);
+        i++ ;
         //philoArray[i].index = i;
     }
     // running each thread
@@ -77,17 +79,18 @@ void dinning(int num_Philosophers, int num_Times_Eats){
 
     
 
-
-    for (long i = 0; i < num_Philosophers; i++)
+    long c = 0 ;
+    while (c < num_Philosophers)
     {
         // pthread_create() function is used to create a new thread
         //If successful, the pthread_create() function returns zero. Otherwise
         //an error number is returned to indicate the error.
-        if (pthread_create(&Philosophers[i],NULL,table,(void*)i))
+        if (pthread_create(&Philosophers[c],NULL,table,(void*)c))
         {
             printf("Thread failed to create \n");
             exit(1) ;
         }
+        c ++ ; 
         
         
     }
@@ -143,16 +146,8 @@ void *table(void *arg){
             sleep(1);
             
         }
-        /*
-        for (long i = 0; i < Philosophers_NUM; i++)
-        {
-            if (i != index )
-            {
-                printf("Philosopher %ld is Thinking ..\n",i + 1);
-            }
-            
-        }
-        */
+        
+        
         printf("Philosopher %ld is Thinking ..\n",id + 1);
         //the mutex is acquired and released with the pthread mutex lock()
         pthread_mutex_unlock(&chopsticks[id]);

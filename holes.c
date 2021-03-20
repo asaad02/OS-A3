@@ -28,13 +28,13 @@ typedef struct Queue Queue;
 /* Helper function */
 Queue * parse(FILE * fileName);
 Queue * create_Process( char id , int memory_size );
-Queue * insert_back(Queue * processList , Queue * node_Add );
+Queue * insert_back(Queue * processList , Queue * node_Add, int mode);
 Queue * pop(Queue ** process);
 Queue * push(Queue * processList ,Queue * node , int time , int stat_location , int end_location );
 void free_queue(Queue * list);
-void remove_process(Queue ** memory_Node ,Queue **processList , int memory[] );
-void loading_process(Queue ** memory_Node ,Queue ** processList , int memory[], double * process_counter , double * hole_counter, double * cumulative_memory , int * num_of_loads , int i , int index , int time );
-void state( Queue *list , int memory[], int * num_processes, int * num_Holes , double * mem_used);
+void remove_process(Queue ** memory_Node ,Queue **processList , int memory[], int swaps);
+void loading_process(Queue ** memory_Node ,Queue ** processList , int memory[], double * process_counter , double * hole_counter, double * cumulative_memory , int * num_of_loads ,int i , int index , int time , double used);
+void state( Queue *list , int memory[], int * num_processes, int * num_Holes , double * mem_used , int use);
 void first_fit( Queue * processList);
 void best_fit( Queue * processList);
 void next_fit( Queue * processList);
@@ -116,7 +116,7 @@ Queue * parse(FILE * fileName){
         token = (char*)strtok(NULL,"\n");
         memory = atoi(token);
         node = create_Process(process_ID,memory);
-        processList = insert_back(processList,node);
+        processList = insert_back(processList,node,1);
 
     }
     return processList ;
@@ -153,28 +153,23 @@ Queue * create_Process( char id , int memory_size ){
 *@return processList
 *@param processList - node_Add
 */
-Queue * insert_back(Queue * processList , Queue * node_Add ){
+Queue * insert_back(Queue * processList , Queue * node_Add, int mode){
 
     //Queue * temp = processList ;
     // if no list exists already
     // return the Node ;
-    if (processList == NULL)
+    if (processList == NULL && mode == 1)
     {
         return node_Add ;
     }
     // insort at end of the list
-    else if (processList ->next !=NULL)
+    else if (processList ->next !=NULL && mode == 1)
     {
-        insert_back(processList ->next,node_Add );
+        insert_back(processList ->next,node_Add,1);
     }else
     {
         processList ->next = node_Add ;
     }
-    
-    
-    
-    
-    
     return processList ;
     
 }
@@ -203,10 +198,11 @@ void first_fit( Queue * processList){
         int space = 0 ;
         int index = -1 ;
         bool is_space = true ;
+        int swaps = 2 ;
         
         
-        
-        for (int i = 0; i < MEMORY_SIZE; i++)
+        int i = 0 ;
+        while (i < MEMORY_SIZE)
         {
             
             // if the byte is free 
@@ -219,12 +215,14 @@ void first_fit( Queue * processList){
                 }
                 space = space + 1 ;
 
-                // if there enough room for next process 
-                if (space >= processList ->memory_size)
+                // if there enough room for next process
+                int room = processList ->memory_size ; 
+                if (space >= room)
                 {
-                    loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , i, index , time );
+                    loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , i, index , time, 0);
 
                     is_space = false ;
+                    i ++ ;
                     break;
                 }
                 
@@ -234,13 +232,14 @@ void first_fit( Queue * processList){
                 space = 0 ;
                 index = -1 ;
             }
+            i ++ ;
             
             
         }
         if (is_space == true)
         {
             
-            remove_process(&memory_Node ,&processList , memory);
+            remove_process(&memory_Node ,&processList , memory, swaps);
             
         }
         time ++ ;
@@ -251,7 +250,7 @@ void first_fit( Queue * processList){
     process_counter /= num_of_loads;
     hole_counter /= num_of_loads ;
 
-    printf("Total loads = %d, average # processes = %lf, average # holes = %lf, cumulative %% mem = %lf \n",num_of_loads,process_counter,hole_counter,cumulative_memory/num_of_loads);
+    printf("Total loads = %d, average # processes = %.02lf, average # holes = %.01lf, cumulative %% mem = %d \n",num_of_loads,process_counter,hole_counter,(int)cumulative_memory/num_of_loads);
     
     if (memory_Node != NULL)
     {
@@ -288,14 +287,15 @@ void best_fit( Queue * processList){
         int start_index_2 = 0 ;
         int ending_index = 0 ;
         bool not_space = true ;
+        int swaps = 2 ;
         
         
-        
-        for (int i = 0; i < MEMORY_SIZE; i++)
+        int i = 0 ;
+        while (i < MEMORY_SIZE)
         {
             
             // if the byte is free 
-            if (memory[i] == 0 && i != 127)
+            if (memory[i] == 0 && i != MEMORY_SIZE - 1)
             {
                 // save it's index 
                 if (start_index == -1)
@@ -307,13 +307,14 @@ void best_fit( Queue * processList){
             }else
             {
                 // save it's index 
-                if (memory[i] == 0 && i == 127)
+                if (memory[i] == 0 && i == MEMORY_SIZE - 1)
                 {
                     space = space + 1 ;
                 }
                 
-                // if there enough room for next process 
-                if (space < smallest_space && space >= processList->memory_size)
+                // if there enough room for next process
+                int room =  processList->memory_size ;
+                if (space < smallest_space && space >= room)
                 {
                     smallest_space = space ;
                     not_space = false ; 
@@ -322,18 +323,20 @@ void best_fit( Queue * processList){
                 space = 0 ;
                 start_index = -1 ;
             }
+            i++ ;
             
             
         }
         if (not_space == true)
         {
             
-            remove_process(&memory_Node ,&processList , memory);
+            remove_process(&memory_Node ,&processList , memory,swaps);
             
         }else
         {
-            ending_index = start_index_2 + processList -> memory_size -1 ;
-            loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , ending_index, start_index_2 , time );
+            int room = processList -> memory_size -1 ;
+            ending_index = start_index_2 + room ;
+            loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , ending_index, start_index_2 , time, 0);
             not_space = false ;
         }
         
@@ -345,7 +348,7 @@ void best_fit( Queue * processList){
     process_counter /= num_of_loads;
     hole_counter /= num_of_loads ;
 
-    printf("Total loads = %d, average # processes = %lf, average # holes = %lf, cumulative %% mem = %lf \n",num_of_loads,process_counter,hole_counter,cumulative_memory/num_of_loads);
+    printf("Total loads = %d, average # processes = %.02lf, average # holes = %.01lf, cumulative %% mem = %d \n",num_of_loads,process_counter,hole_counter,(int)cumulative_memory/num_of_loads);
     
     if (memory_Node != NULL)
     {
@@ -381,10 +384,11 @@ void next_fit( Queue * processList){
         int last_index = 0 ;
         bool is_space = true ;
         bool loop = true ;
+        int swaps = 2 ;
         
         
-        
-        for (int i = last_index; i < MEMORY_SIZE; i++)
+        int i = last_index ;
+        while ( i < MEMORY_SIZE)
         {
             
             // if the byte is free 
@@ -397,10 +401,11 @@ void next_fit( Queue * processList){
                 }
                 space = space + 1 ;
 
-                // if there enough room for next process 
-                if (space >= processList ->memory_size)
+                // if there enough room for next process
+                int room = processList ->memory_size ;
+                if (space >= room)
                 {
-                    loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , i, start_index , time );
+                    loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , i, start_index , time, 0);
 
                     is_space = false ;
                     last_index = i ;
@@ -413,21 +418,21 @@ void next_fit( Queue * processList){
                 space = 0 ;
                 start_index = -1 ;
             }
-            if (i == 127 && is_space == true && loop == true)
+            if (i == MEMORY_SIZE -1  && is_space == true && loop == true)
             {
                 i = 0 ;
                 start_index = -1 ;
                 space = 0 ;
                 loop = false ;
             }
-            
+            i ++ ;
             
             
         }
         if (is_space == true)
         {
             
-            remove_process(&memory_Node ,&processList , memory);
+            remove_process(&memory_Node ,&processList , memory, swaps);
             
         }
         time ++ ;
@@ -438,7 +443,7 @@ void next_fit( Queue * processList){
     process_counter /= num_of_loads;
     hole_counter /= num_of_loads ;
 
-    printf("Total loads = %d, average # processes = %lf, average # holes = %lf, cumulative %% mem = %lf \n",num_of_loads,process_counter,hole_counter,cumulative_memory/num_of_loads);
+    printf("Total loads = %d, average # processes = %.02lf, average # holes = %.01lf, cumulative %% mem = %d \n",num_of_loads,process_counter,hole_counter,(int)cumulative_memory/num_of_loads);
     
     if (memory_Node != NULL)
     {
@@ -470,19 +475,20 @@ void worst_fit( Queue * processList){
     while (processList != NULL )
     {
         int space = 0 ;
-        int smallest_space = -200;
         int start_index = 0 ;
         int start_index_2 = 0 ;
         int ending_index = 0 ;
+        int smallest_space = -200;
+        int swaps = 2 ;
         bool not_space = true ;
         
         
-        
-        for (int i = 0; i < MEMORY_SIZE; i++)
+        int i = 0 ;
+        while (i < MEMORY_SIZE)
         {
             
             // if the byte is free 
-            if (memory[i] == 0 && i != 127)
+            if (memory[i] == 0 && i != MEMORY_SIZE - 1)
             {
                 // save it's index 
                 if (start_index == -1)
@@ -496,13 +502,14 @@ void worst_fit( Queue * processList){
             }else
             {
                 // save it's index 
-                if (memory[i] == 0 && i == 127)
+                if (memory[i] == 0 && i == MEMORY_SIZE - 1)
                 {
                     space = space + 1 ;
                 }
                 
                 // if there enough room for next process 
-                if (space > smallest_space && space >= processList->memory_size)
+                int room = processList->memory_size ;
+                if (space > smallest_space && space >= room)
                 {
                     smallest_space = space ;
                     not_space = false ; 
@@ -513,16 +520,18 @@ void worst_fit( Queue * processList){
             
                 
             }
+            i ++ ;
         }
         if (not_space == true)
         {
             
-            remove_process(&memory_Node ,&processList , memory);
+            remove_process(&memory_Node ,&processList , memory, swaps);
             
         }else
         {
-            ending_index = start_index_2 + processList -> memory_size -1 ;
-            loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , ending_index, start_index_2 , time );
+            int room = processList -> memory_size -1  ;
+            ending_index = start_index_2 + room ;
+            loading_process(&memory_Node ,&processList , memory,&process_counter ,&hole_counter,&cumulative_memory , &num_of_loads , ending_index, start_index_2 , time, 0);
             not_space = true ;
         }
         
@@ -534,7 +543,7 @@ void worst_fit( Queue * processList){
     process_counter /= num_of_loads;
     hole_counter /= num_of_loads ;
 
-    printf("Total loads = %d, average # processes = %lf, average # holes = %lf, cumulative %% mem = %lf \n",num_of_loads,process_counter,hole_counter,cumulative_memory/num_of_loads);
+    printf("Total loads = %d, average # processes = %.02lf, average # holes = %.01lf, cumulative %% mem = %d \n",num_of_loads,process_counter,hole_counter,(int)cumulative_memory/num_of_loads);
     
     if (memory_Node != NULL)
     {
@@ -545,26 +554,20 @@ void worst_fit( Queue * processList){
     
 }
 Queue * pop(Queue ** process){
-
-    Queue * temp = (*process);
-
-    if (!temp)
-    {
-        return NULL ;
-    }
+    
     (*process) = (*process)->next;
 
-    return temp ;
+    return (*process)  ;
     
 }
 Queue * push(Queue * processList ,Queue * node , int time , int stat_location , int end_location ){
 
-    node ->time = time ;
     node ->stateLocation = stat_location ;
     node ->endLocation = end_location ;
     node ->next = NULL ;
+    node ->time = time ;
 
-    processList = insert_back(processList,node);
+    processList = insert_back(processList,node,1);
 
     return processList;
 }
@@ -577,29 +580,30 @@ void free_queue(Queue * list){
     free(list);
     
 }
-void remove_process(Queue ** memory_Node ,Queue ** processList , int memory[] ){
+void remove_process(Queue ** memory_Node ,Queue ** processList , int memory[] , int swaps ){
 
-
-    
 
     Queue * remove_process = *memory_Node;
-    *memory_Node = (*memory_Node)-> next;
+    *memory_Node = pop(memory_Node);
+    //(*memory_Node)-> next;
     //memory_Node = memory_Node-> next ;
     
-    // mark the memory that used as now free 
-    for (int c = remove_process ->stateLocation; c <= remove_process ->endLocation; c++)
+    // mark the memory that used as now free
+    int c = remove_process ->stateLocation;
+    while (c <= remove_process ->endLocation)
     {
         memory[c] = 0 ;
+        c ++ ;
     }
     
     //Once a process has been swapped out for a third time, we assume that the process has
     //run to completion and it is not re-queued.
 
-    if (remove_process->num_swaps != 2)
+    if (remove_process->num_swaps != swaps)
     {
-        remove_process->num_swaps = remove_process->num_swaps + 1 ;  ;
+        remove_process->num_swaps = remove_process->num_swaps + 1;
         remove_process ->next = NULL ;
-        *processList =insert_back(*processList,remove_process);
+        *processList =insert_back(*processList,remove_process,1);
 
 
     }else
@@ -609,42 +613,45 @@ void remove_process(Queue ** memory_Node ,Queue ** processList , int memory[] ){
 }
 
                     
-void loading_process(Queue ** memory_Node ,Queue ** processList , int memory[], double * process_counter , double * hole_counter, double * cumulative_memory , int * num_of_loads ,int i , int index , int time ){
+void loading_process(Queue ** memory_Node ,Queue ** processList , int memory[], double * process_counter , double * hole_counter, double * cumulative_memory , int * num_of_loads ,int i , int index , int time , double used){
 
     
     //////////////
     int num_processes = 0 ;
     int num_Holes = 0 ;
-    double   mem_used = 0 ;
+    double   mem_used = used ;
     // pop the next process
-    // pop(&processList);
+
     Queue * node = *processList ;
-    *processList = (*processList) -> next ;
+    *processList = pop((processList)) ;
+    //(*processList) -> next ;
     // insert process into memory list
     *memory_Node = push(*memory_Node,node, time, index, i );
     // increase loads
     *num_of_loads = *num_of_loads + 1;
-    // mark used bytes 
-    for (int j = index; j <= i; j++)
+    // mark used bytes
+    int j= index ;
+    while (j <= i)
     {
         // bytes occupied
         memory[j] = 1 ;
+        j ++ ;
     }
 
     // stats 
-    state( *memory_Node,memory, &num_processes, &num_Holes , &mem_used);
+    state( *memory_Node,memory, &num_processes, &num_Holes , &mem_used , 1 );
     
     *process_counter =  *process_counter + num_processes ;
     *hole_counter =  *hole_counter + num_Holes ;
     
     double temp_cumulative_memory = *cumulative_memory + mem_used ;
     *cumulative_memory =  *cumulative_memory + mem_used ;
-    double  a = ceil(temp_cumulative_memory) / *num_of_loads ;
+    double  a = round(temp_cumulative_memory)/ *num_of_loads ;
     // print stat 
-    printf("%c loaded, #processes = %d, #holes = %d, %% memusage = %d, cumulative %% mem = %lf \n",node->id,num_processes,num_Holes,(int)round(mem_used),round(a));
+    printf("%c loaded, #processes = %d, #holes = %d, %% memusage = %d, cumulative %% mem = %d \n",node->id,num_processes,num_Holes,(int)round(mem_used),(int)round(a));
 
 }
-void state( Queue *list , int memory[], int * num_processes, int * num_Holes , double * mem_used){
+void state( Queue *list , int memory[], int * num_processes, int * num_Holes , double * mem_used, int use){
 
     // stats 
     bool hole = false ;
@@ -656,21 +663,23 @@ void state( Queue *list , int memory[], int * num_processes, int * num_Holes , d
         *num_processes = (*num_processes + 1) ;
         list = list->next ;
     }
+    int b = 0 ;
     // count holes and memory use 
-    for (int b = 0; b < MEMORY_SIZE; b++)
+    while (b < MEMORY_SIZE)
     {
         // hole count 
-        if (memory[b] == 0 && hole == false)
+        if (memory[b] == 0 && hole == false && use == 1)
         {
             hole = true ;
             *num_Holes = *num_Holes + 1;
         }
         // count memory use 
-        else if (memory[b] == 1)
+        else if (memory[b] == 1 && use == 1)
         {
             hole = false ;
             memory_count++ ;
         }
+        b++ ;
                         
                         
     }
