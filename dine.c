@@ -34,6 +34,8 @@ int main(int argc, char const *argv[])
         printf("Invalid arguments ./dine [philosophers] [Timers of philosophers Should eat\n");
         return -1 ;
     }
+    printf("\n");
+    printf("-----------------------\n");
     // variables 
     // number of philosophers
     int num_Philosophers = atoi(argv[1]);
@@ -50,6 +52,7 @@ int main(int argc, char const *argv[])
         // begin simulation 
         dinning(num_Philosophers,num_Times_Eats);
     }
+    printf("-----------------------\n");
     
     
     

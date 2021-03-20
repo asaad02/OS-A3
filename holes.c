@@ -48,14 +48,14 @@ int main(int argc, char *argv[])
 
     if (argc != 3)
     {
-        printf("Please enter two argument ./holes [Test File] [first, best, next, worst] ");
+        printf("Please enter two argument ./holes [Test File] [first, best, next, worst]\n");
         return -1 ;
     }
     // open the file
     FILE * fileName = fopen(argv[1],"r");
     if (!fileName)
     {
-        printf("Please enter the File name using ./holes [Test File] [first, best, next, worst] ");
+        printf("Please enter the File name using ./holes [Test File] [first, best, next, worst]\n");
         return -1 ;
     }
     
