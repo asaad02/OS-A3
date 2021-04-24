@@ -1,10 +1,14 @@
 ________________________________________
 Compiling and Running:
 
+
 The dining philosophers problem.
+
     COMPLIER: 'make'
+    
     RUNNING:  ./dine < The number of philosophers > < number of times they eat >
--------------------------------------------
+
+
 A memory management with holes using First fit , Best fit , Worst fit , Next fit.
 
     1 : First fit 
