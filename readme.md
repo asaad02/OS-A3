@@ -1,7 +1,4 @@
-Assignment 3
-CIS 3110
-Abdullah Saad
-ID:1043850
+
 _________________________________________
 Compiling and Running:
 
@@ -19,7 +16,3 @@ A memory management with holes using First fit , Best fit , Worst fit , Next fit
     4 : Next fit 
         RUNNING:  ./holes < filename> < next >
 -----------------------------------------------------------
-Data structure :
-
-    insert processes from the text file  into the linked list and insert the process at the end of the linked list by pop and push functions.
------------------------------------------------------------------------------
